@@ -5,9 +5,20 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch:          # ✅ allows manual trigger for destroy
+    inputs:
+      action:
+        description: 'Terraform action to run'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ✅ fixes Node.js warning
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   terraform:
@@ -34,8 +45,9 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        if: github.event.inputs.action != 'destroy'
         run: terraform plan -out=tfplan
 
       - name: Terraform Destroy
-        if: github.ref == 'refs/heads/master'
+        if: github.event.inputs.action == 'destroy'
         run: terraform destroy -auto-approve
